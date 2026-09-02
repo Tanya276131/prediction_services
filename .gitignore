@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+mlruns/
+mlartifacts/
+monitoring_report.html
+monitoring_summary.json
+.env
+.DS_Store
+data/processed/*.csv
+*.egg-info/
