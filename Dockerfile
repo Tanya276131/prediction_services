@@ -9,7 +9,17 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# ---- Stage 2: slim runtime image ----
+# ---- Stage 2: train the model inside the build (no external data dependency) ----
+FROM builder AS trainer
+
+WORKDIR /build
+COPY src/ ./src/
+RUN mkdir -p data/raw && \
+    apt-get update && apt-get install -y --no-install-recommends curl && \
+    curl -sL -o data/raw/telco_churn.csv https://raw.githubusercontent.com/IBM/telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv && \
+    python -m src.train
+
+# ---- Stage 3: slim runtime image ----
 FROM python:3.12-slim
 
 RUN useradd --create-home --uid 1000 appuser
@@ -19,7 +29,7 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY src/ ./src/
-COPY models/ ./models/
+COPY --from=trainer /build/models/ ./models/
 
 RUN chown -R appuser:appuser /app
 USER appuser
